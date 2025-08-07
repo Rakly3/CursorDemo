@@ -144,6 +144,13 @@ class ParticleEmitter:
         self.burst_count = 10
         self.burst_timer = 0.0
         self.burst_interval = 1.0
+        
+        # Emitter lifetime settings
+        self.emitter_lifetime = -1.0  # -1 means infinite
+        self.emitter_age = 0.0
+        self.fade_out_duration = 1.0  # How long to fade out after lifetime
+        self.fade_out_timer = 0.0
+        self.is_fading_out = False
     
     def update(self, dt: float) -> None:
         """
@@ -152,6 +159,20 @@ class ParticleEmitter:
         Args:
             dt: Delta time
         """
+        # Update emitter age and lifetime
+        self.emitter_age += dt
+        
+        # Check if emitter should start fading out
+        if self.emitter_lifetime > 0 and self.emitter_age >= self.emitter_lifetime and not self.is_fading_out:
+            self.is_fading_out = True
+            self.fade_out_timer = 0.0
+        
+        # Update fade out
+        if self.is_fading_out:
+            self.fade_out_timer += dt
+            if self.fade_out_timer >= self.fade_out_duration:
+                self.active = False  # Stop emitting new particles
+        
         # Update emission timer
         if self.active:
             if self.burst_mode:
@@ -264,6 +285,21 @@ class ParticleEmitter:
         self.burst_count = count
         self.burst_interval = interval
     
+    def set_emitter_lifetime(self, lifetime: float, fade_out_duration: float = 1.0) -> None:
+        """
+        Set emitter lifetime
+        
+        Args:
+            lifetime: How long the emitter should be active (-1 for infinite)
+            fade_out_duration: How long to fade out after lifetime expires
+        """
+        self.emitter_lifetime = lifetime
+        self.fade_out_duration = fade_out_duration
+    
+    def is_finished(self) -> bool:
+        """Check if emitter is finished (no more particles and not active)"""
+        return not self.active and len(self.particles) == 0
+    
     def clear_particles(self) -> None:
         """Clear all particles"""
         self.particles.clear()
@@ -307,9 +343,16 @@ class ParticleSystem:
         if not self.active:
             return
         
-        # Update emitters
+        # Update emitters and remove finished ones
+        finished_emitters = []
         for emitter in self.emitters:
             emitter.update(dt)
+            if emitter.is_finished():
+                finished_emitters.append(emitter)
+        
+        # Remove finished emitters
+        for emitter in finished_emitters:
+            self.emitters.remove(emitter)
         
         # Collect all particles
         self.particles = []
@@ -366,6 +409,7 @@ def create_fire_effect(x: float, y: float) -> ParticleEmitter:
     emitter.size_variation = 0.5
     emitter.speed_variation = 0.3
     emitter.life_variation = 0.5
+    emitter.set_emitter_lifetime(3.0, 1.0)  # 3 seconds active, 1 second fade out
     return emitter
 
 
@@ -385,6 +429,7 @@ def create_explosion_effect(x: float, y: float) -> ParticleEmitter:
     emitter.speed_variation = 0.5
     emitter.life_variation = 0.7
     emitter.enable_trail(True, 5)
+    emitter.set_emitter_lifetime(0.2, 0.5)  # 0.2 seconds active (burst), 0.5 seconds fade out
     return emitter
 
 
@@ -403,6 +448,7 @@ def create_sparkle_effect(x: float, y: float) -> ParticleEmitter:
     emitter.size_variation = 0.3
     emitter.speed_variation = 0.2
     emitter.life_variation = 0.3
+    emitter.set_emitter_lifetime(4.0, 1.5)  # 4 seconds active, 1.5 seconds fade out
     return emitter
 
 
@@ -421,6 +467,7 @@ def create_smoke_effect(x: float, y: float) -> ParticleEmitter:
     emitter.size_variation = 0.8
     emitter.speed_variation = 0.4
     emitter.life_variation = 0.6
+    emitter.set_emitter_lifetime(5.0, 2.0)  # 5 seconds active, 2 seconds fade out
     return emitter
 
 

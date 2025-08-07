@@ -72,6 +72,10 @@ class CursorDemoApp:
         self.scene_timer = 0.0
         self.scene_duration = 5.0
         
+        # Effect creation timers
+        self.effect_timer = 0.0
+        self.effect_interval = 4.0  # Create new effects every 4 seconds
+        
         self.logger.info("✅ Demo application initialized successfully!")
     
     def _init_platform_detection(self) -> None:
@@ -291,6 +295,7 @@ class CursorDemoApp:
         self.demo_time += dt
         self.scene_timer += dt
         self.failsafe_timer += dt
+        self.effect_timer += dt
         
         # Update animation time
         self.animation_time += dt
@@ -300,6 +305,11 @@ class CursorDemoApp:
         
         # Update performance monitor
         self.performance_monitor.update_fps()
+        
+        # Create new effects periodically
+        if self.effect_timer >= self.effect_interval:
+            self._create_demo_effects()
+            self.effect_timer = 0.0
         
         # Check scene transition
         if self.scene_timer >= self.scene_duration:
@@ -456,13 +466,6 @@ class CursorDemoApp:
             text = self.fonts['medium'].render(line, True, color.to_rgb_tuple())
             text_rect = text.get_rect(center=(self.width // 2, 200 + i * 40))
             self.screen.blit(text, text_rect)
-        
-        # Add some automatic effects
-        if random_range(0, 1) < 0.02:  # 2% chance per frame
-            x = random_range(100, self.width - 100)
-            y = random_range(100, self.height - 100)
-            sparkle = create_sparkle_effect(x, y)
-            self.particle_system.add_emitter(sparkle)
     
     def _scene_interactive_demo(self, dt: float) -> None:
         """Interactive features demo scene"""
@@ -607,6 +610,7 @@ class CursorDemoApp:
         """Reset demo state"""
         self.demo_time = 0.0
         self.scene_timer = 0.0
+        self.effect_timer = 0.0
         self.current_scene = 0
         self.particle_system.clear_all()
         self._create_demo_effects()
