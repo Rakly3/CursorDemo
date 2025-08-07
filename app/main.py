@@ -540,8 +540,14 @@ class CursorDemoApp:
             elif i == 6:
                 color = Color(255, 255, 0)
             else:
-                alert = summary['alerts'].get(line.split(': ')[1].lower(), False)
-                color = Color(255, 100, 100) if alert else Color(100, 255, 100)
+                # Safely extract alert key from line
+                parts = line.split(': ')
+                if len(parts) >= 2:
+                    alert_key = parts[1].lower()
+                    alert = summary['alerts'].get(alert_key, False)
+                    color = Color(255, 100, 100) if alert else Color(100, 255, 100)
+                else:
+                    color = Color(100, 255, 100)  # Default to green if parsing fails
             
             text = self.fonts['medium'].render(line, True, color.to_rgb_tuple())
             text_rect = text.get_rect(center=(self.width // 2, 200 + i * 40))
