@@ -14,8 +14,18 @@ import random
 import math
 from typing import List, Tuple, Optional, Callable
 from dataclasses import dataclass
-from ..utils.math_utils import clamp, lerp, random_range, distance
-from ..utils.color_utils import Color, random_color, random_bright_color
+
+# Use absolute imports for better compatibility
+try:
+    from app.utils.math_utils import clamp, lerp, random_range, distance
+    from app.utils.color_utils import Color, random_color, random_bright_color
+except ImportError:
+    # Fallback for direct script execution
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    from app.utils.math_utils import clamp, lerp, random_range, distance
+    from app.utils.color_utils import Color, random_color, random_bright_color
 
 
 @dataclass
