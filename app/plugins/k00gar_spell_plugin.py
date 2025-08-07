@@ -73,8 +73,8 @@ class K00garSpellPlugin(BasePlugin):
         
         # Spell configuration
         self.spell_duration = 3.0
-        self.particles_per_char = 15
-        self.spell_radius = 30
+        self.particles_per_char = 50  # Increased for better letter formation
+        self.spell_radius = 15  # Smaller radius for tighter formation
         
     def get_plugin_info(self) -> PluginInfo:
         """Get plugin information"""
@@ -133,11 +133,12 @@ class K00garSpellPlugin(BasePlugin):
                 char_x = pos[0] + char_pos[0]
                 char_y = pos[1] + char_pos[1]
                 
-                # Create emitter for this character
-                emitter = self._create_char_emitter(char_x, char_y, char_color, i * 0.1)
-                particle_system.add_emitter(emitter)
+                # Create multiple emitters for each character to form letter shape
+                char_emitters = self._create_letter_emitters(char_x, char_y, char, char_color, i * 0.1)
                 
-                spell_effect['char_emitters'].append(emitter)
+                for emitter in char_emitters:
+                    particle_system.add_emitter(emitter)
+                    spell_effect['char_emitters'].append(emitter)
             
             # Add to active spells
             self.active_spells.append(spell_effect)
@@ -146,6 +147,88 @@ class K00garSpellPlugin(BasePlugin):
             
         except Exception as e:
             self.logger.error(f"Error creating spell effect: {e}")
+    
+    def _create_letter_emitters(self, x: float, y: float, char: str, color: Color, delay: float) -> List[ParticleEmitter]:
+        """
+        Create multiple emitters to form a letter shape
+        
+        Args:
+            x: X position
+            y: Y position
+            char: Character to form
+            color: Character color
+            delay: Delay before starting emission
+            
+        Returns:
+            List of particle emitters
+        """
+        emitters = []
+        
+        # Define letter shapes (simplified pixel art)
+        letter_shapes = {
+            'k': [
+                (0, -8), (0, -6), (0, -4), (0, -2), (0, 0), (0, 2), (0, 4), (0, 6), (0, 8),  # Vertical line
+                (2, 4), (4, 2), (6, 0), (8, -2), (10, -4),  # Upper diagonal
+                (2, -4), (4, -2), (6, 0), (8, 2), (10, 4),  # Lower diagonal
+            ],
+            '0': [
+                (0, -6), (2, -8), (4, -8), (6, -8), (8, -6),  # Top
+                (8, -4), (8, -2), (8, 0), (8, 2), (8, 4), (8, 6),  # Right
+                (6, 8), (4, 8), (2, 8), (0, 6),  # Bottom
+                (0, 4), (0, 2), (0, 0), (0, -2), (0, -4),  # Left
+            ],
+            'g': [
+                (0, -6), (2, -8), (4, -8), (6, -8), (8, -6),  # Top
+                (8, -4), (8, -2), (8, 0), (8, 2), (8, 4), (8, 6),  # Right
+                (6, 8), (4, 8), (2, 8), (0, 6),  # Bottom
+                (0, 4), (0, 2), (0, 0), (0, -2), (0, -4),  # Left
+                (2, 0), (4, 0), (6, 0), (8, 0),  # Middle line
+            ],
+            'a': [
+                (0, -6), (2, -8), (4, -8), (6, -8), (8, -6),  # Top
+                (8, -4), (8, -2), (8, 0), (8, 2), (8, 4), (8, 6),  # Right
+                (6, 8), (4, 8), (2, 8), (0, 6),  # Bottom
+                (0, 4), (0, 2), (0, 0), (0, -2), (0, -4),  # Left
+                (2, 0), (4, 0), (6, 0),  # Middle line
+            ],
+            'r': [
+                (0, -8), (0, -6), (0, -4), (0, -2), (0, 0), (0, 2), (0, 4), (0, 6), (0, 8),  # Vertical line
+                (2, 6), (4, 4), (6, 2), (8, 0),  # Diagonal
+            ]
+        }
+        
+        # Get the shape for this character
+        shape = letter_shapes.get(char, [(0, 0)])  # Default to center if char not found
+        
+        # Create an emitter for each point in the letter shape
+        for point_x, point_y in shape:
+            emitter = ParticleEmitter(x + point_x, y + point_y)
+            
+            # Configure emitter for letter formation
+            emitter.set_emission_rate(15.0)  # Lower rate for each point
+            emitter.set_particle_life(2.5)
+            emitter.set_particle_speed(10.0)  # Very slow for tight formation
+            emitter.set_particle_size(1.5)    # Small particles
+            emitter.set_particle_color(color)
+            emitter.set_emission_angle(0, 360)
+            emitter.set_gravity(0.0)
+            emitter.set_friction(0.98)  # High friction to stay in place
+            
+            # Minimal variation for clear letter formation
+            emitter.color_variation = 10.0
+            emitter.size_variation = 0.2
+            emitter.speed_variation = 0.1
+            emitter.life_variation = 0.2
+            
+            # Set lifetime
+            emitter.set_emitter_lifetime(1.8, 0.6)
+            
+            # Add delay
+            emitter.emission_timer = -delay
+            
+            emitters.append(emitter)
+        
+        return emitters
     
     def _create_char_emitter(self, x: float, y: float, color: Color, delay: float) -> ParticleEmitter:
         """
@@ -162,24 +245,24 @@ class K00garSpellPlugin(BasePlugin):
         """
         emitter = ParticleEmitter(x, y)
         
-        # Configure emitter for character effect
-        emitter.set_emission_rate(20.0)
-        emitter.set_particle_life(2.0)
-        emitter.set_particle_speed(50.0)
-        emitter.set_particle_size(3.0)
+        # Configure emitter for better letter formation
+        emitter.set_emission_rate(40.0)  # Higher emission rate
+        emitter.set_particle_life(3.0)   # Longer life for better visibility
+        emitter.set_particle_speed(20.0)  # Slower speed for tighter formation
+        emitter.set_particle_size(2.0)    # Smaller particles for finer detail
         emitter.set_particle_color(color)
         emitter.set_emission_angle(0, 360)  # All directions
         emitter.set_gravity(0.0)
-        emitter.set_friction(0.98)
+        emitter.set_friction(0.95)  # Less friction for better formation
         
         # Add variation
-        emitter.color_variation = 30.0
-        emitter.size_variation = 0.5
-        emitter.speed_variation = 0.3
-        emitter.life_variation = 0.4
+        emitter.color_variation = 20.0  # Less color variation for clarity
+        emitter.size_variation = 0.3    # Less size variation
+        emitter.speed_variation = 0.2   # Less speed variation
+        emitter.life_variation = 0.3    # Less life variation
         
         # Set lifetime
-        emitter.set_emitter_lifetime(1.5, 0.5)
+        emitter.set_emitter_lifetime(2.0, 0.8)  # Longer lifetime
         
         # Add delay
         emitter.emission_timer = -delay  # Negative to delay start
