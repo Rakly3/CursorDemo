@@ -26,6 +26,7 @@ from utils.performance import get_performance_monitor, PerformanceProfiler
 from utils.math_utils import clamp, lerp, random_range, ease_in_out
 from utils.color_utils import Color, random_color, rainbow_colors, color_gradient
 from frontend.particle_system import ParticleSystem, create_fire_effect, create_explosion_effect, create_sparkle_effect
+from plugins import get_plugin_manager
 
 
 class CursorDemoApp:
@@ -52,6 +53,14 @@ class CursorDemoApp:
         self._init_configuration()
         self._init_pygame()
         self._init_demo_components()
+        
+        # Update app context with screen after pygame init
+        self.app_context['screen'] = self.screen
+        
+        # Initialize and load plugins after pygame is ready
+        self.plugin_manager = get_plugin_manager("app/plugins")
+        self.logger.info(f"Plugin manager initialized, plugins dir: {self.plugin_manager.plugins_dir}")
+        self.plugin_manager.load_plugins(self.app_context)
         
         # Application state
         self.running = True
@@ -147,6 +156,8 @@ class CursorDemoApp:
             self.screen = pygame.display.set_mode((self.width, self.height), flags)
             pygame.display.set_caption("Cursor IDE Demo - Cross-Platform Pygame Application")
             
+            # Screen will be set in app_context after initialization
+            
             # Set up clock
             self.clock = pygame.time.Clock()
             
@@ -166,6 +177,15 @@ class CursorDemoApp:
         
         # Initialize particle system
         self.particle_system = ParticleSystem()
+        
+        # Create app context for plugins
+        self.app_context = {
+            'particle_system': self.particle_system,
+            'screen': None,  # Will be set after pygame init
+            'width': self.width,
+            'height': self.height,
+            'logger': self.logger
+        }
         
         # Create initial effects
         self._create_demo_effects()
@@ -246,7 +266,10 @@ class CursorDemoApp:
                 self._handle_keydown(event.key)
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self._handle_mouse_click(event.pos)
+                # Let plugins handle the mouse click first
+                if not self.plugin_manager.handle_mouse_click(event.button, event.pos):
+                    # If no plugin handled it, use default behavior
+                    self._handle_mouse_click(event.pos)
             
             elif event.type == pygame.MOUSEMOTION:
                 self.mouse_pos = event.pos
@@ -309,6 +332,9 @@ class CursorDemoApp:
         # Update particle system
         self.particle_system.update(dt)
         
+        # Update plugins
+        self.plugin_manager.update_plugins(dt)
+        
         # Update performance monitor
         self.performance_monitor.update_fps()
         
@@ -337,6 +363,9 @@ class CursorDemoApp:
         
         # Render particle system
         self.particle_system.render(self.screen)
+        
+        # Render plugins
+        self.plugin_manager.render_plugins(self.screen)
         
         # Render UI
         self._render_ui()
@@ -417,6 +446,22 @@ class CursorDemoApp:
             True, self.text_color.to_rgb_tuple()
         )
         self.screen.blit(particle_text, (10, 160))
+        
+        # Render plugin info
+        plugin_count = len(self.plugin_manager.get_plugin_list())
+        plugin_text = self.fonts['small'].render(
+            f"Plugins: {plugin_count}", 
+            True, self.text_color.to_rgb_tuple()
+        )
+        self.screen.blit(plugin_text, (10, 190))
+        
+        # Show plugin hint if plugins are loaded
+        if plugin_count > 0:
+            plugin_hint = self.fonts['small'].render(
+                "Right-click for k00gar spell!", 
+                True, Color(255, 255, 0).to_rgb_tuple()
+            )
+            self.screen.blit(plugin_hint, (10, 220))
     
     def _scene_platform_demo(self, dt: float) -> None:
         """Platform detection and optimization demo scene"""
@@ -635,6 +680,10 @@ class CursorDemoApp:
         # Stop performance monitoring
         if hasattr(self, 'performance_monitor'):
             self.performance_monitor.stop()
+        
+        # Unload plugins
+        if hasattr(self, 'plugin_manager'):
+            self.plugin_manager.unload_plugins()
         
         # Quit Pygame
         pygame.quit()
