@@ -75,6 +75,27 @@ CursorDemo/
 
 ### Installation
 
+### Option 1: Using Platform-Specific Launch Scripts (Recommended)
+
+**Windows:**
+```cmd
+launch_windows.bat
+```
+
+**Linux:**
+```bash
+chmod +x launch_linux.sh
+./launch_linux.sh
+```
+
+**macOS:**
+```bash
+chmod +x launch_mac.sh
+./launch_mac.sh
+```
+
+### Option 2: Manual Setup
+
 1. **Clone the repository**
    ```bash
    git clone https://github.com/Rakly3/CursorDemo.git
