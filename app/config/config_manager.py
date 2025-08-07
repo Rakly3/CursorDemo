@@ -191,7 +191,8 @@ class ConfigManager:
                 'demo_duration': 30,
                 'show_fps': True,
                 'show_platform_info': True,
-                'interactive_mode': True
+                'interactive_mode': True,
+                'disable_failsafe': False
             },
             'Input': {
                 'mouse_sensitivity': 1.0,
@@ -219,6 +220,7 @@ class ConfigManager:
             'CURSOR_DEMO_VOLUME': ('Audio', 'volume'),
             'CURSOR_DEMO_DEBUG': ('Performance', 'debug_mode'),
             'CURSOR_DEMO_DURATION': ('Demo', 'demo_duration'),
+            'CURSOR_DEMO_DISABLE_FAILSAFE': ('Demo', 'disable_failsafe'),
             'CURSOR_DEMO_LOG_LEVEL': ('Logging', 'level')
         }
         

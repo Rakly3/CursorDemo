@@ -50,7 +50,8 @@ echo Starting Cursor IDE Demo...
 echo Press Ctrl+C to exit
 echo.
 
-REM Launch the application with error handling
+REM Launch the application with error handling and disabled failsafe
+set CURSOR_DEMO_DISABLE_FAILSAFE=true
 python app/main.py
 
 REM Check exit code

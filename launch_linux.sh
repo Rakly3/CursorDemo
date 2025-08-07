@@ -67,7 +67,8 @@ echo "Starting Cursor IDE Demo..."
 echo "Press Ctrl+C to exit"
 echo ""
 
-# Launch the application with error handling
+# Launch the application with error handling and disabled failsafe
+export CURSOR_DEMO_DISABLE_FAILSAFE=true
 python3 app/main.py
 
 # Check exit code

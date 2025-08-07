@@ -67,6 +67,12 @@ class CursorDemoApp:
         self.failsafe_timer = 0.0
         self.failsafe_timeout = 60.0  # 60 seconds
         
+        # Check if failsafe should be disabled (when using launchers)
+        disable_failsafe = get_config("Demo", "disable_failsafe", False)
+        if disable_failsafe:
+            self.failsafe_timeout = -1.0  # Disable failsafe
+            self.logger.info("🛡️ Failsafe timer disabled (launcher mode)")
+        
         # Demo features
         self.current_scene = 0
         self.scene_timer = 0.0
@@ -618,7 +624,7 @@ class CursorDemoApp:
     
     def _check_failsafe(self) -> None:
         """Check failsafe timeout"""
-        if self.failsafe_timer > self.failsafe_timeout:
+        if self.failsafe_timeout > 0 and self.failsafe_timer > self.failsafe_timeout:
             self.logger.warning("⚠️ Failsafe timeout reached - exiting demo")
             self.running = False
     
